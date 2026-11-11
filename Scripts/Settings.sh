@@ -9,7 +9,7 @@ sed -i "s/luci-theme-bootstrap/luci-theme-$WRT_THEME/g" $(find ./feeds/luci/coll
 #修改immortalwrt.lan关联IP
 sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $(find ./feeds/luci/modules/luci-mod-system/ -type f -name "flash.js")
 #添加编译日期标识及构建者
-sed -i "s/(\(luciversion || ''\))/(\1) + (' \/ $WRT_DATE \/ build by zk6685')/g" $(find ./feeds/luci/modules/luci-mod-status/ -type f -name "10_system.js")
+sed -i "s/(\(luciversion || ''\))/(\1) + (' \/ $WRT_DATE \/ build by chkdsk228')/g" $(find ./feeds/luci/modules/luci-mod-status/ -type f -name "10_system.js")
 
 # 概览页 Firmware Version 字段包成本仓库超链接(构造 E('a') 节点, 避免被 E() 转义为纯文本)
 python3 - <<'PYEOF'
