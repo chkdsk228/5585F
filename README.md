@@ -1,10 +1,6 @@
 # OpenWRT-CI
 
-**贝尔 040 系列光猫 OpenWrt / PonWrt 固件云编译仓库**
-
-> 固件免费开源分享。如果它帮你省了事、省了心，欢迎扫码支持一下 ☕ —— 你的每一份心意，都是我继续编译、持续更新的动力。
->
-> <img src="docs/donate.png" alt="赞赏码" width="240"/>
+**758Xsoc芯片immwrt/ PonWrt 固件云编译仓库**
 
 ---
 
@@ -103,9 +99,3 @@ https://www.right.com.cn/forum/thread-8453612-1-1.html
 - `Config` —— 自定义配置（AIROHA-ONU 等目标配置）
 
 ---
-
-## ☕ 赞赏支持
-
-固件为**免费开源**分享。如果你觉得好用，欢迎扫码支持一杯咖啡，让我有动力持续维护、继续编译更新。
-
-<img src="docs/donate.png" alt="赞赏码" width="240"/>
