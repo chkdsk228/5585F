@@ -62,7 +62,9 @@ env:
 jobs:
   core:
     name: ${{inputs.WRT_SOURCE}}
-    runs-on: ubuntu-latest
+    # 固定 24.04(noble)：immortalwrt 的 init_build_environment.sh 仅支持到 noble，
+    # 而 ubuntu-latest 已滚动至 26.04，会导致 check_system 直接 exit 1（Unsupported OS）。
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Projects
         uses: actions/checkout@main

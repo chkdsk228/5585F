@@ -58,7 +58,16 @@ sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 echo "CONFIG_PACKAGE_luci=y" >> ./.config
 echo "CONFIG_LUCI_LANG_zh_Hans=y" >> ./.config
 echo "CONFIG_PACKAGE_luci-theme-$WRT_THEME=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-app-$WRT_THEME-config=y" >> ./.config
+# 主题的配置配套包并非都存在：argon/aurora 为 luci-app-<theme>-config，
+# vantage 没有 -config 包（其配套是 luci-app-vantage 本体），避免写入不存在的包名。
+case "$WRT_THEME" in
+	argon|aurora)
+		echo "CONFIG_PACKAGE_luci-app-$WRT_THEME-config=y" >> ./.config
+		;;
+	vantage)
+		echo "CONFIG_PACKAGE_luci-app-vantage=y" >> ./.config
+		;;
+esac
 
 #引入私有扩展配置
 if [ -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" ]; then
