@@ -13,10 +13,9 @@
 - airoha-ponctl / airoha-pond / airoha-pon-debug（PON 用户态工具）
 - luci-app-pon（光口管理界面）
 
-### 🛍️ iStoreX 首页 + iStore 商店
-- luci-app-istorex（iStoreX 首页 / 应用管理面板）
-- luci-app-quickstart + quickstart（新手引导首页）
-- luci-app-store（iStore 应用商店本体）+ luci-lib-taskd / taskd / luci-lib-xterm
+### 🎨 Vantage 主题 + 实况首页
+- luci-theme-vantage + luci-app-vantage（登录后实况首页：在线设备、速率、接口状态一目了然；AIR 流默认主题）
+- luci-app-store（iStore 应用商店本体）+ luci-lib-taskd / taskd / luci-lib-xterm（iStoreX 首页与 quickstart 已移除）
 
 ### 🛡️ dae / daed（eBPF 代理）全依赖 + BTF / CO-RE
 内核已开启完整调试信息与 BTF（`DEBUG_INFO=y`、`DEBUG_INFO_BTF=y`、`DEBUG_INFO_REDUCED=n`、CGROUPS / CGROUP_BPF / BPF_EVENTS / BPF_TOOLCHAIN_HOST / XDP_SOCKETS），并内置全部内核依赖：
@@ -28,7 +27,7 @@
 - luci-app-airoha-npu（**luanmuc 中文版**，NPU / CPU / Frame Engine 状态）+ 中文语言包（luci-i18n-airoha-npu-zh-cn）
 
 ### 🎨 其他内置
-- luci-theme-aurora + luci-app-aurora-config（Aurora 主题）
+- luci-theme-aurora + luci-app-aurora-config（Aurora 主题，保留可选）
 - vlmcsd + luci-app-vlmcsd（KMS 激活服务）
 - zram-swap + kmod-zram（内存压缩交换）
 - luci-app-appfilter / luci-app-filemanager / luci-app-samba4 / luci-app-wolplus / luci-app-ddns

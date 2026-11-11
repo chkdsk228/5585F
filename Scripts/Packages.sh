@@ -51,6 +51,11 @@ UPDATE_PACKAGE "argon" "sbwml/luci-theme-argon" "openwrt-25.12"
 #UPDATE_PACKAGE "shadcn" "eamonxg/luci-theme-shadcn" "main"
 UPDATE_PACKAGE "aurora" "eamonxg/luci-theme-aurora" "master"
 UPDATE_PACKAGE "aurora-config" "eamonxg/luci-app-aurora-config" "master"
+
+# Vantage 主题 + 实况面板（monorepo 结构，直接提取两个包目录；UPDATE_PACKAGE 的 "pkg" 模式会因目录同名冲突失效，故用独立克隆）
+git clone --depth=1 --single-branch --branch main "https://github.com/anothaDev/luci-theme-vantage.git" ./vantage-monorepo/
+mv ./vantage-monorepo/luci-theme-vantage ./vantage-monorepo/luci-app-vantage ./
+rm -rf ./vantage-monorepo/
 #UPDATE_PACKAGE "kucat" "sirpdboy/luci-theme-kucat" "master"
 #UPDATE_PACKAGE "kucat-config" "sirpdboy/luci-app-kucat-config" "master"
 
@@ -83,9 +88,9 @@ UPDATE_PACKAGE "luci-app-airoha-npu" "luanmuc/luci-app-airoha-npu" "main"
 UPDATE_PACKAGE "luci-app-lucky" "sirpdboy/luci-app-lucky" "main"
 #UPDATE_PACKAGE "luci-app-tailscale-community" "Tokisaki-Galaxy/luci-app-tailscale-community" "master" "" "luci-app-tailscale-community"
 
-# iStore 商店(iStoreX 首页+应用商店)及依赖 —— 统一从 kenzok8/small-package 拉取
-UPDATE_PACKAGE "quickstart" "kenzok8/small-package" "main" "pkg"
-UPDATE_PACKAGE "luci-app-istorex" "kenzok8/small-package" "main" "pkg"
+# iStore 商店及依赖 —— 统一从 kenzok8/small-package 拉取（iStoreX 首页/quickstart 已移除）
+#UPDATE_PACKAGE "quickstart" "kenzok8/small-package" "main" "pkg"
+#UPDATE_PACKAGE "luci-app-istorex" "kenzok8/small-package" "main" "pkg"
 UPDATE_PACKAGE "luci-app-store" "kenzok8/small-package" "main" "pkg"
 UPDATE_PACKAGE "luci-lib-taskd" "kenzok8/small-package" "main" "pkg"
 UPDATE_PACKAGE "luci-lib-xterm" "kenzok8/small-package" "main" "pkg"
