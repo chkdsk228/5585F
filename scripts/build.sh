@@ -48,10 +48,10 @@ if [ -z "$(ls -A "$OUT")" ]; then
   exit 1
 fi
 
-# 命名规则：arioha-<机型>-R<NN 递加>-B26-<月>-<日>
-# R 号来自 config/REVISION（每轮发版 +1），日期按北京时间
+# 命名规则：immortalwrt-<机型>-squashfs-enhanced-<YY.MM.DD>-<HH.MM.SS>
+# 时间戳为北京时间编译时刻
 source "$REPO/scripts/name-firmware.sh"
-FWNAME="$(firmware_basename "$MODEL" "$REPO/config/REVISION")"
+FWNAME="$(firmware_basename "$MODEL")"
 MAIN="$(find "$OUT" -maxdepth 1 -type f -name '*sysupgrade*.itb' -print -quit)"
 [ -n "$MAIN" ] || MAIN="$(find "$OUT" -maxdepth 1 -type f -name '*sysupgrade*' -print -quit)"
 if [ -z "$MAIN" ]; then

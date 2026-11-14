@@ -7,7 +7,6 @@ set -euo pipefail
 MODEL="${1:?缺少机型名}"
 PROFILE="${2:?缺少 target profile}"
 SUBTARGET="${3:?缺少 subtarget (an7581/an7583)}"
-MIHOMO_VERSION="${MIHOMO_VERSION:-v1.19.33}"
 
 REPO="${GITHUB_WORKSPACE:?缺少 GITHUB_WORKSPACE}"
 SRC="$REPO/ponwrt"
@@ -47,7 +46,6 @@ src-git video https://github.com/openwrt/video.git
 src-git pon_drivers https://github.com/pbs05/openwrt-pon-drivers.git
 src-git onu https://github.com/naoki66/OpenWrt_ONU_CONFIG.git;main
 src-git airoha https://github.com/naoki66/luci-app-airoha.git;main
-src-git qmodem https://github.com/FUjr/QModem.git;main
 FEEDS
 cat feeds.conf
 ./scripts/feeds update -a
@@ -55,30 +53,31 @@ cat feeds.conf
 endg
 
 # ---------------------------------------------------------------
-# 2.5) Aurora 主题 + 配置插件（第三方，不在 immortalwrt/luci 里）
-#      eamonxg 的两个仓库（主题 + 配置插件）根目录都是标准 package 结构，
-#      clone 后整体拷进 package/。主题要求 OpenWrt 23.05+（ucode LuCI），
-#      本源码树满足；包自带 30_luci-theme-aurora 首次启动设默认，
-#      99-lang-theme 再兜底。配置插件提供 5 套预设 / 明暗色板 / 布局自定义。
+# 2.5) Vantage 主题 + 实况面板（第三方，monorepo 结构）
+#      anothaDev/luci-theme-vantage 仓库根目录含两个包：
+#        luci-theme-vantage/  — 主题本体
+#        luci-app-vantage/    — 登录后实况首页面板
+#      不能直接用 UPDATE_PACKAGE 的 pkg 模式（目录名与包名相同会冲突），
+#      故整体 clone 后提取两个子目录到 package/。
+#      Vantage 要求 OpenWrt 25.12+（ucode LuCI），本源码树满足。
 # ---------------------------------------------------------------
-group "引入 Aurora 主题与配置插件"
-AURORA_DIR="$SRC/package/luci-theme-aurora"
-AURORA_CFG_DIR="$SRC/package/luci-app-aurora-config"
-if [ ! -f "$AURORA_DIR/Makefile" ] || [ ! -f "$AURORA_CFG_DIR/Makefile" ]; then
-  rm -rf /tmp/aurora-src /tmp/aurora-cfg-src
-  git clone --depth 1 https://github.com/eamonxg/luci-theme-aurora.git /tmp/aurora-src
-  git clone --depth 1 https://github.com/eamonxg/luci-app-aurora-config.git /tmp/aurora-cfg-src
-  mkdir -p "$AURORA_DIR" "$AURORA_CFG_DIR"
-  cp -a /tmp/aurora-src/. "$AURORA_DIR/"
-  cp -a /tmp/aurora-cfg-src/. "$AURORA_CFG_DIR/"
-  rm -rf /tmp/aurora-src /tmp/aurora-cfg-src
+group "引入 Vantage 主题与实况面板"
+VANTAGE_DIR="$SRC/package/luci-theme-vantage"
+VANTAGE_APP_DIR="$SRC/package/luci-app-vantage"
+if [ ! -f "$VANTAGE_DIR/Makefile" ] || [ ! -f "$VANTAGE_APP_DIR/Makefile" ]; then
+  rm -rf /tmp/vantage-src
+  git clone --depth 1 https://github.com/anothaDev/luci-theme-vantage.git /tmp/vantage-src
+  mkdir -p "$VANTAGE_DIR" "$VANTAGE_APP_DIR"
+  cp -a /tmp/vantage-src/luci-theme-vantage/. "$VANTAGE_DIR/"
+  cp -a /tmp/vantage-src/luci-app-vantage/. "$VANTAGE_APP_DIR/"
+  rm -rf /tmp/vantage-src
 fi
-grep -q 'LUCI_TITLE:=Aurora Theme' "$AURORA_DIR/Makefile" || {
-  echo "::error::Aurora 主题源码不完整"
+grep -q 'PKG_NAME:=luci-theme-vantage' "$VANTAGE_DIR/Makefile" || {
+  echo "::error::Vantage 主题源码不完整"
   exit 1
 }
-grep -q 'LuCI configuration UI for the Aurora theme' "$AURORA_CFG_DIR/Makefile" || {
-  echo "::error::Aurora 配置插件源码不完整"
+grep -q 'PKG_NAME:=luci-app-vantage' "$VANTAGE_APP_DIR/Makefile" || {
+  echo "::error::Vantage 实况面板源码不完整"
   exit 1
 }
 endg
@@ -88,7 +87,7 @@ endg
 # ---------------------------------------------------------------
 group "注入机型定制 ($MODEL)"
 OVL="$SRC/files"
-mkdir -p "$OVL/etc/uci-defaults" "$OVL/etc/openclash/core"
+mkdir -p "$OVL/etc/uci-defaults"
 
 # 3.4 概览页频率/温度显示：LuCI 状态页通过 /sbin/cpuinfo、/sbin/tempinfo 读数。
 #     autocore 只在 ipq*/mediatek*/qualcommax* 安装这两个脚本，airoha 不在其列，
@@ -125,9 +124,9 @@ RPS
 chmod +x "$OVL/etc/hotplug.d/net/20-rps"
 
 # 3.6 代理转发调优：TCP 缓冲扩容 + conntrack 上限 + dnsmasq 缓存。
-#     OpenClash/Passwall 向代理服务器发起的出站连接是本机 TCP，BBR 配合大缓冲
+#     代理客户端向远端发起的出站连接是本机 TCP，BBR 配合大缓冲
 #     才能撑满高延迟大带宽链路（200ms RTT x 300Mbps 约 7.5MB 窗口，默认上限不够）；
-#     conntrack 65536 应对 mihomo 大量 UDP/QUIC 短连接，避免表满丢连接。
+#     conntrack 65536 应对大量 UDP/QUIC 短连接，避免表满丢连接。
 cat > "$OVL/etc/sysctl.d/91-proxy-tuning.conf" <<'PROXYTUNE'
 # TCP/UDP 缓冲上限 16MB：tcp_rmem/wmem 第三列是内核自动调优上限
 net.core.rmem_max = 16777216
@@ -210,36 +209,17 @@ esac
 # 3.4 默认简体中文 + 默认主题（uci-defaults 开机首次执行，99- 前缀保证最后覆盖）
 #     dispatcher 读取 luci.main.lang：'zh_cn' 会被转成 'zh-cn' 去加载
 #     /usr/lib/lua/luci/i18n/*.zh-cn.lmo（由 luci-i18n-*-zh-cn 包提供）。
-#     Aurora 包自带 30_luci-theme-aurora 首次安装会设默认，这里 99- 兜底
-#     （显式把 mediaurlbase 指向 aurora，防止任何旧值残留）。
+#     Vantage 包自带首次安装设默认的脚本，这里 99- 兜底
+#     （显式把 mediaurlbase 指向 vantage，防止任何旧值残留）。
 cat > "$OVL/etc/uci-defaults/99-lang-theme" <<LANGTHEME
 #!/bin/sh
 uci -q set luci.main.lang='zh_cn'
-uci -q set luci.themes.Aurora='/luci-static/aurora'
-uci -q set luci.main.mediaurlbase='/luci-static/aurora'
+uci -q set luci.themes.Vantage='/luci-static/vantage'
+uci -q set luci.main.mediaurlbase='/luci-static/vantage'
 uci -q commit luci
 exit 0
 LANGTHEME
 chmod +x "$OVL/etc/uci-defaults/"*
-endg
-
-# ---------------------------------------------------------------
-# 4) OpenClash 内置核心：Mihomo aarch64 静态二进制
-# ---------------------------------------------------------------
-group "内置 OpenClash 内核 (Mihomo ${MIHOMO_VERSION})"
-CORE_URL="https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VERSION}/mihomo-linux-arm64-${MIHOMO_VERSION}.gz"
-if ! curl -fL --retry 3 -o /tmp/mihomo.gz "$CORE_URL"; then
-  CORE_URL="$(curl -fsSL https://api.github.com/repos/MetaCubeX/mihomo/releases/latest \
-    | grep -oE 'https://[^\"]*mihomo-linux-arm64-[^\"]*\.gz' | head -1 || true)"
-  if [ -z "$CORE_URL" ]; then
-    echo "::error::无法定位 Mihomo arm64 内核"
-    exit 1
-  fi
-  curl -fL --retry 3 -o /tmp/mihomo.gz "$CORE_URL"
-fi
-gunzip -f /tmp/mihomo.gz
-install -m 0755 /tmp/mihomo "$OVL/etc/openclash/core/clash_meta"
-file "$OVL/etc/openclash/core/clash_meta"
 endg
 
 # ---------------------------------------------------------------
@@ -342,9 +322,8 @@ fi
 
 # 严格校验：用户要求的包必须全部入选
 for p in luci-app-onu luci-app-pon-status airoha-ponctl airoha-pond airoha-pon-debug \
-         luci-app-airoha-npu luci-app-qmodem-next qmodem luci-app-openclash \
-         luci-app-passwall luci-app-cpufreq xray-core \
-         luci-theme-aurora luci-app-aurora-config luci-i18n-base-zh-cn \
+         luci-app-airoha-npu luci-app-cpufreq \
+         luci-theme-vantage luci-app-vantage luci-i18n-base-zh-cn \
          usb-modeswitch kmod-usb-net-qmi-wwan chat comgt \
          kmod-usb-serial-sierrawireless kmod-mtk-t7xx \
          autocore kmod-crypto-hw-eip93 kmod-cryptodev openssl-util \
@@ -359,5 +338,5 @@ if ! grep -q "^CONFIG_LUCI_LANG_zh_Hans=y$" .config; then
   echo "::error::缺少 CONFIG_LUCI_LANG_zh_Hans，中文翻译包不会生效"
   exit 1
 fi
-echo "关键包校验通过（含中文 / Aurora 主题）"
+echo "关键包校验通过（含中文 / Vantage 主题）"
 endg

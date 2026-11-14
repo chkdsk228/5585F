@@ -7,10 +7,9 @@
 ### 核心特性
 - ✅ **PON 光口完整支持** — 集成 `naoki66/OpenWrt_ONU_CONFIG`（GPON/XGPON 认证、OMCI、光模块状态）
 - ✅ **NPU 状态面板** — 集成 `naoki66/luci-app-airoha` 的 NPU/CPU/Frame Engine 监控
-- ✅ **Aurora 主题** — 内置 5 套预设、明暗色板、布局自定义
+- ✅ **Vantage 主题** — 登录后实况首页（在线设备/速率/接口状态一览）
 - ✅ **硬件加密加速** — EIP93 (AES/DES/authenc) + openssl-devcrypto
-- ✅ **QModem 4G/5G 模组** — 含 MTK T7XX/FM350 支持，HG5585F-CT 额外集成 QFirehose 刷机工具
-- ✅ **代理优化** — OpenClash（内置 Mihomo 内核）+ Passwall（内置 Xray 核心），TCP 缓冲 16MB + conntrack 65536
+- ✅ **转发调优** — TCP 缓冲 16MB + conntrack 65536 + dnsmasq 缓存
 - ✅ **RPS 多核转发** — 网卡软中断分散到 CPU1-3，缓解 PPE 未启用时的单核瓶颈
 - ✅ **BBR 拥塞控制** — 跨境高延迟链路吞吐显著提升
 
@@ -30,15 +29,11 @@
 ### 预装 LuCI 应用
 - **PON 管理** — luci-app-onu、luci-app-pon-status（认证/业务/OMCI/DDM）
 - **NPU 监控** — luci-app-airoha-npu（PPE 引擎状态、CPU 频率、温度）
-- **代理工具** — luci-app-openclash、luci-app-passwall
-- **网络工具** — luci-app-qmodem-next、luci-app-cpufreq
-- **主题** — luci-theme-aurora + luci-app-aurora-config
+- **网络工具** — luci-app-cpufreq
+- **主题** — luci-theme-vantage + luci-app-vantage
 
 ### 技术亮点
-1. **OpenClash 内置内核** — Mihomo aarch64 静态二进制预置于 `/etc/openclash/core/clash_meta`
-2. **Passwall 内置 Xray** — 免首次配置时下载核心
 3. **CPU 频率/温度显示** — 注入 `/sbin/cpuinfo`、`/sbin/tempinfo` + autocore ACL 授权
-4. **USB 4G/5G 全套驱动** — QMI/MBIM/NCM/RNDIS + 模式切换 + AT/PPP 工具
 5. **u-boot 源码镜像回退** — 上游站响应慢时自动切换 GitHub 镜像并重算校验值
 6. **设备隔离校验** — 构建时断言目标机型符号确实被选中，避免编错设备
 
@@ -68,12 +63,12 @@ sysupgrade -n sysupgrade.bin
 
 ### 固件命名规则
 ```
-immortalwrt-<机型>-squashfs-enhanced-R<NN>-B<YY>-<月>-<日>.itb
+immortalwrt-<机型>-squashfs-enhanced-<YY.MM.DD>-<HH.MM.SS>.itb
 ```
-示例：`immortalwrt-hg5585f-ct-squashfs-enhanced-R01-B26-11-14.itb`
+示例：`immortalwrt-hg5585f-ct-squashfs-enhanced-26.11.14-12.51.52.itb`
 
-- `R<NN>` — 版本号，来自 `config/REVISION`，每轮发版 +1
-- `B<YY>` — 批次号，默认 `B26`（2026 年度）
+- `<YY.MM.DD>` — 编译日期（北京时间）
+- `<HH.MM.SS>` — 编译时刻（北京时间，精确到秒避免同日覆盖）
 
 ## 🛠️ 构建说明
 
@@ -117,8 +112,8 @@ bash scripts/build.sh hg5585f-ct fiberhome_hg5585f-ct
 |------|------|----------|
 | CPU 频率/温度不显示 | LuCI ACL 仅授权部分 RPC | 引入 autocore 提供 RPC 授权声明 |
 | ccache 不生效 | kconfig 可见性依赖 DEVEL | 改写 `Config-devel.in` 移除条件 |
-| OpenClash 无内核 | 包本身不含二进制 | 构建时注入 Mihomo aarch64 |
 | 编错设备 | profile 可能被 defconfig 丢弃 | 构建后断言设备符号存在 |
+| Vantage 主题不生效 | 部分版本 mediaurlbase 残留 | uci-defaults 99- 兜底指向 vantage |
 
 ### ⚠️ 待验证
 - [ ] PON 口光模块识别（需运营商 OLT 配合）
@@ -131,15 +126,14 @@ bash scripts/build.sh hg5585f-ct fiberhome_hg5585f-ct
 |------|------|------|
 | `config/seed.config` | 上游同步 | 共用 .config 种子，每 3 天跟随上游 |
 | `config/seed.config` (IP/主机名) | 🔒 自研 | 后台 192.168.10.1、主机名 OWRT |
-| `config/REVISION` | 🔒 自研 | 固件版本号 |
 | `config/overlay/sbin/` | 上游同步 | cpuinfo / tempinfo 状态页脚本 |
 | `scripts/prepare.sh` | 上游同步 | 拉源码/feeds/定制/生成配置 |
 | `scripts/build.sh` | 上游同步 | 下载+编译+收集产物 |
-| `scripts/name-firmware.sh` | 🔒 自研 | 固件命名规范（Enhanced 风格） |
+| `scripts/name-firmware.sh` | 🔒 自研 | 固件命名（编译日期+时间） |
 | `.github/workflows/*.yml` | 部分自研 | Runner 固定 ubuntu-24.04 |
 | `extra/*` | 上游同步 | 扩展机型构建脚本 |
 
-> 自研部分：构建者标识 `build by chkdsk228`、主机名 OWRT、后台 IP 192.168.10.1、固件命名规范、CI runner 版本。
+> 自研部分：构建者标识 `build by chkdsk228`、主机名 OWRT、后台 IP 192.168.10.1、固件命名规则、CI runner 版本。
 
 ## 🙏 致谢
 
@@ -150,8 +144,7 @@ bash scripts/build.sh hg5585f-ct fiberhome_hg5585f-ct
 | [ponwrt](https://github.com/pbs05/ponwrt) | pbs05 | AN7581 PON 支持 |
 | [OpenWrt_ONU_CONFIG](https://github.com/naoki66/OpenWrt_ONU_CONFIG) | naoki66 | PON 管理界面 |
 | [luci-app-airoha](https://github.com/naoki66/luci-app-airoha) | naoki66 | NPU 状态面板 |
-| [QModem](https://github.com/FUjr/QModem) | FUjr | 4G/5G 模组管理 |
-| [luci-theme-aurora](https://github.com/eamonxg/luci-theme-aurora) | eamonxg | Aurora 主题 |
+| [luci-theme-vantage](https://github.com/anothaDev/luci-theme-vantage) | anothaDev | Vantage 主题 + 实况面板 |
 
 ## 📜 许可证
 

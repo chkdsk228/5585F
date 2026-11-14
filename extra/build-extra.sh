@@ -51,7 +51,7 @@ fi
 
 # 命名规则：arioha-<机型>-R<NN 递加>-B26-<月>-<日>
 source "$REPO/scripts/name-firmware.sh"
-FWNAME="$(firmware_basename "$MODEL" "$REPO/config/REVISION")"
+FWNAME="$(firmware_basename "$MODEL")"
 MAIN="$(find "$OUT" -maxdepth 1 -type f -name '*sysupgrade*.itb' -print -quit)"
 [ -n "$MAIN" ] || MAIN="$(find "$OUT" -maxdepth 1 -type f -name '*sysupgrade*' -print -quit)"
 if [ -z "$MAIN" ]; then
