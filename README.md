@@ -1,100 +1,167 @@
-# OpenWRT-CI
+# ImmortalWrt for FiberHome HG5585F (Enhanced Edition)
 
-**758Xsoc芯片immwrt/ PonWrt 固件云编译仓库**
+基于 **ImmortalWrt** 的烽火 HG5585F 光猫增强固件项目，源自 [luxinxin0378-create/an7581-HG5585-md-mf](https://github.com/luxinxin0378-create/an7581-HG5585-md-mf)。
 
----
+## 🎯 项目特色
 
-## ✨ 本固件特征（AIR-ONU 编译流）
+### 核心特性
+- ✅ **PON 光口完整支持** — 集成 `naoki66/OpenWrt_ONU_CONFIG`（GPON/XGPON 认证、OMCI、光模块状态）
+- ✅ **NPU 状态面板** — 集成 `naoki66/luci-app-airoha` 的 NPU/CPU/Frame Engine 监控
+- ✅ **Aurora 主题** — 内置 5 套预设、明暗色板、布局自定义
+- ✅ **硬件加密加速** — EIP93 (AES/DES/authenc) + openssl-devcrypto
+- ✅ **QModem 4G/5G 模组** — 含 MTK T7XX/FM350 支持，HG5585F-CT 额外集成 QFirehose 刷机工具
+- ✅ **代理优化** — OpenClash（内置 Mihomo 内核）+ Passwall（内置 Xray 核心），TCP 缓冲 16MB + conntrack 65536
+- ✅ **RPS 多核转发** — 网卡软中断分散到 CPU1-3，缓解 PPE 未启用时的单核瓶颈
+- ✅ **BBR 拥塞控制** — 跨境高延迟链路吞吐显著提升
 
-基于 **pbs05/ponwrt**（PON 专用源码）master 分支，内核 **6.18.55**，面向 **airoha / an7581 平台** 全系光猫定制，输出 **ITB（.itb）** 镜像。固件统一以 **`zk-daepon-`** 为文件名前缀；设备名 **daepon**，登录地址 **192.168.1.1**（默认无密码），版本标识带 `build by zk6685`。
+### 设备支持
 
-### 📡 光口 PON 全套
-- kmod-airoha-xpon / kmod-airoha-pon-frontend（PON 底层驱动）
-- airoha-ponctl / airoha-pond / airoha-pon-debug（PON 用户态工具）
-- luci-app-pon（光口管理界面）
+| 型号 | SoC | 内存 | 闪存 | 网口 | WiFi | PON |
+|------|-----|------|------|------|------|-----|
+| **HG5585F-CT** | AN7581 | 512MB | 512MB NAND | 1×2.5G(GPY211C) + 3×1G | ✅ MT7916D | ✅ EN7572 XGSPON |
+| **HG5585F-CU** | AN7581 | 512MB | 512MB NAND | 4×1G | ✅ MT7916D | ✅ EN7572 XGSPON |
+| XG-040G-MD | AN7581 | 1GB | 512MB NAND | 1×2.5G + 3×1G | ❌ | ✅ |
+| XG-040G-MF | AN7583 | 1GB | 512MB NAND | 1×2.5G + 3×1G | ❌ | ✅ |
 
-### 🎨 Vantage 主题 + 实况首页
-- luci-theme-vantage + luci-app-vantage（登录后实况首页：在线设备、速率、接口状态一目了然；AIR 流默认主题）
-- luci-app-store（iStore 应用商店本体）+ luci-lib-taskd / taskd / luci-lib-xterm（iStoreX 首页与 quickstart 已移除）
+> **CT 与 CU 的区别**：CT 版 lan1 为独立 GPY211C 2.5G PHY，CU 版 lan1 走内部 PHY1（千兆）。LED 颜色 CT=蓝、CU=绿。
 
-### 🛡️ dae / daed（eBPF 代理）全依赖 + BTF / CO-RE
-内核已开启完整调试信息与 BTF（`DEBUG_INFO=y`、`DEBUG_INFO_BTF=y`、`DEBUG_INFO_REDUCED=n`、CGROUPS / CGROUP_BPF / BPF_EVENTS / BPF_TOOLCHAIN_HOST / XDP_SOCKETS），并内置全部内核依赖：
-- kmod-sched-bpf / kmod-sched-core / kmod-veth / kmod-xdp-sockets-diag / kmod-nft-tproxy / ca-bundle
+## 📦 固件特性
 
-> dae / daed 二进制由用户自行安装（`opkg install dae daed`），本固件已备好 BTF 环境，可直接使用。
+### 预装 LuCI 应用
+- **PON 管理** — luci-app-onu、luci-app-pon-status（认证/业务/OMCI/DDM）
+- **NPU 监控** — luci-app-airoha-npu（PPE 引擎状态、CPU 频率、温度）
+- **代理工具** — luci-app-openclash、luci-app-passwall
+- **网络工具** — luci-app-qmodem-next、luci-app-cpufreq
+- **主题** — luci-theme-aurora + luci-app-aurora-config
 
-### 📊 Airoha SoC 状态面板
-- luci-app-airoha-npu（**luanmuc 中文版**，NPU / CPU / Frame Engine 状态）+ 中文语言包（luci-i18n-airoha-npu-zh-cn）
+### 技术亮点
+1. **OpenClash 内置内核** — Mihomo aarch64 静态二进制预置于 `/etc/openclash/core/clash_meta`
+2. **Passwall 内置 Xray** — 免首次配置时下载核心
+3. **CPU 频率/温度显示** — 注入 `/sbin/cpuinfo`、`/sbin/tempinfo` + autocore ACL 授权
+4. **USB 4G/5G 全套驱动** — QMI/MBIM/NCM/RNDIS + 模式切换 + AT/PPP 工具
+5. **u-boot 源码镜像回退** — 上游站响应慢时自动切换 GitHub 镜像并重算校验值
+6. **设备隔离校验** — 构建时断言目标机型符号确实被选中，避免编错设备
 
-### 🎨 其他内置
-- luci-theme-aurora + luci-app-aurora-config（Aurora 主题，保留可选）
-- vlmcsd + luci-app-vlmcsd（KMS 激活服务）
-- zram-swap + kmod-zram（内存压缩交换）
-- luci-app-appfilter / luci-app-filemanager / luci-app-samba4 / luci-app-wolplus / luci-app-ddns
+## 🚀 快速开始
 
-### 📦 支持机型（同平台全系一次编译产出）
+### 默认配置
+- **管理地址：** http://192.168.10.1
+- **主机名：** OWRT
+- **用户名：** root
+- **密码：** root（首次登录后请修改）
+- **WiFi SSID：** HG5585F-CT / HG5585F-CU（按机型命名）
+- **WiFi 密码：** 88888888
 
-**AN7581 平台（airoha/an7581）**
+### 刷写方法
 
-| 品牌 | 机型 | 变体 |
-|---|---|---|
-| **Nokia** | XG-040G-MD | ubi / ubi-usb-sfp |
-| **Nokia** | XG-040G-TF | ubi |
-| **烽火** FiberHome | HG5382A | — |
-| **烽火** FiberHome | HG5585F | ct / cu |
-| **Gemtek** | XG2010G | — |
-| **Unionman** | UNG00A | — |
-| **中兴 ZNXT** | ZN504XG-D / ZN515XG-D | — |
-
-**AN7583 平台（airoha/an7583）**
-
-| 品牌 | 机型 | 变体 |
-|---|---|---|
-| **Nokia** | XG-040G-MF | 普通版 / ubi |
-
-> 两平台**并行编译**，Release 内 `zk-daepon-...` 固件按设备名区分，请选择与你的光猫型号完全对应的 `.itb` 刷写。
-
-### 🏷️ 固件命名规则
+**从原厂固件刷写：**
+```bash
+sysupgrade -F -n factory.bin
 ```
-zk-daepon-<平台设备>-squashfs-sysupgrade-<源码>-<分支>-<日期>.itb
+
+**从 OpenWrt/ImmortalWrt 升级：**
+```bash
+sysupgrade -n sysupgrade.bin
 ```
-例：`zk-daepon-airoha-an7581-nokia_xg-040g-md-ubi-squashfs-sysupgrade-pbs05-master-26.10.22-XX.XX.XX.itb`
 
-> ⚠️ 各机型固件虽共用同一内核 / 插件 / PON 配置，但**内存颗粒、分区布局、外设可能不同，切勿混刷**，请按设备名选择对应 `.itb`。
+> ⚠️ **刷机前必须备份原厂分区，尤其是 `ri` 和 `bosa`**，否则无法恢复光模块校准与 MAC 地址。
 
----
+### 固件命名规则
+```
+immortalwrt-<机型>-squashfs-enhanced-R<NN>-B<YY>-<月>-<日>.itb
+```
+示例：`immortalwrt-hg5585f-ct-squashfs-enhanced-R01-B26-11-14.itb`
 
-## ⚠️ 刷机前须知
+- `R<NN>` — 版本号，来自 `config/REVISION`，每轮发版 +1
+- `B<YY>` — 批次号，默认 `B26`（2026 年度）
 
-刷机前**必须备份所有原厂分区，特别是 `ri` 和 `bosa` 分区**。详细说明见恩山论坛：
+## 🛠️ 构建说明
 
-https://www.right.com.cn/forum/thread-8453612-1-1.html
+### GitHub Actions 工作流
 
-### 支持设备（传统分区版）
+| 工作流 | 机型 | 说明 |
+|--------|------|------|
+| `build.yml` | HG5585F-CT + XG-040G-MD | 主线双机型构建，推送 config/scripts 自动触发 |
+| `build-extra.yml` | HG5585F-CU + XG-040G-MF | 额外机型（CU 版 + AN7583 平台） |
+| `build-opt.yml` | 全机型 | 优化构建（含 ccache 预热） |
+| `build-usbwifi.yml` | HG5585F 系列 | USB WiFi 网卡支持版 |
+| `build-xg040gmd-ubi-usb-sfp.yml` | XG-040G-MD | UBI-USB-SFP 变体 |
 
-四个固件通用，设备名称仅用于区分不同功能。
+### 构建流程
+```bash
+# 1. Fork 本仓库
+# 2. Actions → 选择工作流 → Run workflow
+# 3. 等待 2-4 小时，Release 页面下载固件
+```
 
-**带 USB 设备**：XG-040G-MD　XG-140G-MD（lan4 wan）
-**不带 USB 设备**：XG-040G-TF　XG-140G-TF（lan4 wan）
+### 本地构建（需要 50GB+ 磁盘）
+```bash
+# 安装依赖（Debian/Ubuntu）
+sudo apt install -y build-essential clang flex bison g++ gawk \
+  gettext git libncurses-dev libssl-dev python3 python3-dev \
+  python3-setuptools rsync swig unzip zlib1g-dev file wget curl \
+  libtool-bin libelf-dev device-tree-compiler ccache
 
-上游源码：https://github.com/bingoguo93/immortalwrt.git
+# 准备并编译
+bash scripts/prepare.sh hg5585f-ct fiberhome_hg5585f-ct
+bash scripts/build.sh hg5585f-ct fiberhome_hg5585f-ct
+```
 
----
+## 📋 已知问题与说明
 
-## 🔄 恢复 MAC 地址
+### PPE 硬件加速限制
+本固件在 AN7581 上 **PPE 硬件加速仅对 GDM 口生效**（eth0 / lan1 / pon0）。若 WAN 接在 lan2/lan3/lan4（GSW 交换口），流量全部走 CPU 软件转发，测速时 CPU 占用会升高。将 WAN 改接 lan1 可启用硬件加速。
 
-刷机前同样需先备份原厂分区（尤其 `ri` / `bosa`），刷机后如需恢复 MAC 地址，按详细说明刷回备份即可。
+### ✅ 已解决问题
+| 问题 | 原因 | 解决方案 |
+|------|------|----------|
+| CPU 频率/温度不显示 | LuCI ACL 仅授权部分 RPC | 引入 autocore 提供 RPC 授权声明 |
+| ccache 不生效 | kconfig 可见性依赖 DEVEL | 改写 `Config-devel.in` 移除条件 |
+| OpenClash 无内核 | 包本身不含二进制 | 构建时注入 Mihomo aarch64 |
+| 编错设备 | profile 可能被 defconfig 丢弃 | 构建后断言设备符号存在 |
 
-## 📅 编译说明
+### ⚠️ 待验证
+- [ ] PON 口光模块识别（需运营商 OLT 配合）
+- [ ] NPU 加速在 lan1 上的实际性能
+- [ ] USB WiFi 网卡兼容性
 
-- 固件**每天早上 5 点自动编译**。
-- 固件信息里的时间为编译开始的时间，方便核对上游源码提交时间。
-- 覆盖贝尔 040 系列、140 系列。
+## 🏗️ 项目结构
 
-## 📁 目录简要说明
+| 文件 | 类型 | 说明 |
+|------|------|------|
+| `config/seed.config` | 上游同步 | 共用 .config 种子，每 3 天跟随上游 |
+| `config/seed.config` (IP/主机名) | 🔒 自研 | 后台 192.168.10.1、主机名 OWRT |
+| `config/REVISION` | 🔒 自研 | 固件版本号 |
+| `config/overlay/sbin/` | 上游同步 | cpuinfo / tempinfo 状态页脚本 |
+| `scripts/prepare.sh` | 上游同步 | 拉源码/feeds/定制/生成配置 |
+| `scripts/build.sh` | 上游同步 | 下载+编译+收集产物 |
+| `scripts/name-firmware.sh` | 🔒 自研 | 固件命名规范（Enhanced 风格） |
+| `.github/workflows/*.yml` | 部分自研 | Runner 固定 ubuntu-24.04 |
+| `extra/*` | 上游同步 | 扩展机型构建脚本 |
 
-- `.github/workflows` —— 自定义 CI 配置（AIR-ONU / AIR-NWRT / AIR-MAIN 等编译流）
-- `Scripts` —— 自定义脚本（软件包拉取、设置项注入）
-- `Config` —— 自定义配置（AIROHA-ONU 等目标配置）
+> 自研部分：构建者标识 `build by chkdsk228`、主机名 OWRT、后台 IP 192.168.10.1、固件命名规范、CI runner 版本。
 
----
+## 🙏 致谢
+
+| 项目 | 作者 | 贡献 |
+|------|------|------|
+| [an7581-HG5585-md-mf](https://github.com/luxinxin0378-create/an7581-HG5585-md-mf) | luxinxin0378-create | **本项目直接上游** |
+| [ImmortalWrt](https://github.com/immortalwrt/immortalwrt) | immortalwrt | 上游固件 |
+| [ponwrt](https://github.com/pbs05/ponwrt) | pbs05 | AN7581 PON 支持 |
+| [OpenWrt_ONU_CONFIG](https://github.com/naoki66/OpenWrt_ONU_CONFIG) | naoki66 | PON 管理界面 |
+| [luci-app-airoha](https://github.com/naoki66/luci-app-airoha) | naoki66 | NPU 状态面板 |
+| [QModem](https://github.com/FUjr/QModem) | FUjr | 4G/5G 模组管理 |
+| [luci-theme-aurora](https://github.com/eamonxg/luci-theme-aurora) | eamonxg | Aurora 主题 |
+
+## 📜 许可证
+
+- 固件代码：GPL-2.0
+- CI 脚本：MIT
+- 硬件文档：保留原作者版权
+
+## 🔗 相关链接
+
+- [ImmortalWrt 官方文档](https://immortalwrt.org/)
+- [OpenWrt Wiki - AN7581](https://openwrt.org/toh/hwdata/airoha/airoha_an7581)
+- [本项目上游](https://github.com/luxinxin0378-create/an7581-HG5585-md-mf)
+- [姊妹项目：XG-040G-Enhanced](https://github.com/chkdsk228/ImmortalWrt-XG-040G-Enhanced)
