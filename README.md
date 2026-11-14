@@ -35,8 +35,9 @@
 ### 技术亮点
 3. **CPU 频率/温度显示** — 注入 `/sbin/cpuinfo`、`/sbin/tempinfo` + autocore ACL 授权
 4. **USB 网卡驱动群** — 14 个 kmod-usb-net-*（asix/ax88179/cdc-eem/cdc-ether/cdc-mbim/cdc-ncm/cdc-subset/huawei-cdc-ncm/ipheth/rndis/rtl8150/rtl8152/sierrawireless），双 USB 口热插即用
-5. **u-boot 源码镜像回退** — 上游站响应慢时自动切换 GitHub 镜像并重算校验值
-6. **设备隔离校验** — 构建时断言目标机型符号确实被选中，避免编错设备
+5. **系统诊断工具** — zram-swap（512MB 内存压缩交换）/ usbutils（lsusb）/ curl / iperf3（测速基准）/ htop / coremark（CPU 基准）
+6. **u-boot 源码镜像回退** — 上游站响应慢时自动切换 GitHub 镜像并重算校验值
+7. **设备隔离校验** — 构建时断言目标机型符号确实被选中，避免编错设备
 
 ## 🚀 快速开始
 

@@ -347,6 +347,7 @@ for p in luci-app-onu luci-app-pon-status airoha-ponctl airoha-pond airoha-pon-d
          kmod-usb-net-cdc-ncm kmod-usb-net-cdc-subset kmod-usb-net-huawei-cdc-ncm \
          kmod-usb-net-ipheth kmod-usb-net-rndis kmod-usb-net-rtl8150 \
          kmod-usb-net-rtl8152 kmod-usb-net-sierrawireless \
+         zram-swap usbutils curl iperf3 htop coremark \
          ${EXTRA_REQUIRED_PKGS:-}; do
   if ! grep -q "^CONFIG_PACKAGE_${p}=y$" .config; then
     echo "::error::配置缺少 ${p}"
