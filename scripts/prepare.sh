@@ -341,7 +341,13 @@ for p in luci-app-onu luci-app-pon-status airoha-ponctl airoha-pond airoha-pon-d
          luci-app-airoha-npu luci-app-cpufreq \
          luci-theme-vantage luci-app-vantage luci-i18n-base-zh-cn \
          autocore kmod-crypto-hw-eip93 kmod-cryptodev openssl-util \
-         libopenssl-devcrypto kmod-tcp-bbr ${EXTRA_REQUIRED_PKGS:-}; do
+         libopenssl-devcrypto kmod-tcp-bbr \
+         kmod-usb-net kmod-usb-net-asix kmod-usb-net-asix-ax88179 \
+         kmod-usb-net-cdc-eem kmod-usb-net-cdc-ether kmod-usb-net-cdc-mbim \
+         kmod-usb-net-cdc-ncm kmod-usb-net-cdc-subset kmod-usb-net-huawei-cdc-ncm \
+         kmod-usb-net-ipheth kmod-usb-net-rndis kmod-usb-net-rtl8150 \
+         kmod-usb-net-rtl8152 kmod-usb-net-sierrawireless \
+         ${EXTRA_REQUIRED_PKGS:-}; do
   if ! grep -q "^CONFIG_PACKAGE_${p}=y$" .config; then
     echo "::error::配置缺少 ${p}"
     exit 1
